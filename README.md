@@ -64,7 +64,7 @@
 
 ### 1. Клонирование репозитория
 ```bash
-git clone https://github.com/YOUR_USERNAME/AliasYou.git
+git clone https://github.com/semyqofu/AliasYou.git
 cd AliasYou
 ```
 
