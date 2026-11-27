@@ -36,6 +36,7 @@ import com.semyqofu.aliasyou.ui.LocalAppStrings
 import com.semyqofu.aliasyou.ui.components.Md3ExpressivePolygonShape
 import com.semyqofu.aliasyou.ui.components.Md3ExpressiveShape
 import com.semyqofu.aliasyou.ui.components.bouncyClickable
+import com.semyqofu.aliasyou.ui.components.isWideLandscape
 import com.semyqofu.aliasyou.ui.components.pulsing
 
 @Composable
@@ -88,22 +89,11 @@ fun StartScreen(
                         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
                     )
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .systemBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 20.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Header Area
+            val headerArea: @Composable () -> Unit = {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     // Expressive Team Badge (Solid MD3 Tonal Surface in 7-sided cookie shape)
                     Surface(
                         modifier = Modifier
@@ -117,7 +107,7 @@ fun StartScreen(
                             Icon(
                                 imageVector = Icons.Rounded.Groups,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(40.dp)
                             )
                         }
@@ -153,13 +143,13 @@ fun StartScreen(
                         text = strings.getReadySubtitle,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp),
+                        textAlign = TextAlign.Center
                     )
                 }
+            }
 
-                Spacer(modifier = Modifier.height(28.dp))
-
-                // Scoreboard Card
+            val scoreboardCard: @Composable () -> Unit = {
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.elevatedCardColors(
@@ -235,7 +225,7 @@ fun StartScreen(
                                             Icon(
                                                 imageVector = Icons.Rounded.WorkspacePremium,
                                                 contentDescription = strings.leaderCd,
-                                                tint = MaterialTheme.colorScheme.primary,
+                                                tint = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier
                                                     .size(20.dp)
                                                     .padding(end = 4.dp)
@@ -245,7 +235,7 @@ fun StartScreen(
                                                 modifier = Modifier
                                                     .size(8.dp)
                                                     .clip(CircleShape)
-                                                    .background(MaterialTheme.colorScheme.primary)
+                                                    .background(MaterialTheme.colorScheme.onPrimaryContainer)
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                         }
@@ -274,16 +264,16 @@ fun StartScreen(
                         }
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Expressive Action Button
+            val startButton: @Composable () -> Unit = {
                 Button(
                     onClick = {
                         triggerVibration(45)
                         onStartGame()
                     },
                     modifier = Modifier
+                        .widthIn(max = 420.dp)
                         .fillMaxWidth()
                         .height(64.dp)
                         .bouncyClickable {
@@ -317,8 +307,75 @@ fun StartScreen(
                         )
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+            ) {
+                if (isWideLandscape(maxWidth, maxHeight)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 36.dp, vertical = 24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(32.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .weight(0.95f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 8.dp, vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(28.dp)
+                        ) {
+                            headerArea()
+                            startButton()
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1.05f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 8.dp, vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(modifier = Modifier.widthIn(max = 540.dp)) {
+                                scoreboardCard()
+                            }
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .widthIn(max = 560.dp)
+                                .fillMaxSize()
+                                .padding(horizontal = 24.dp, vertical = 20.dp)
+                                .verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.padding(top = 16.dp)) {
+                                headerArea()
+                            }
+
+                            Spacer(modifier = Modifier.height(28.dp))
+
+                            scoreboardCard()
+
+                            Spacer(modifier = Modifier.height(32.dp))
+
+                            startButton()
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
+                }
             }
         }
     }

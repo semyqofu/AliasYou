@@ -1,6 +1,9 @@
 package com.semyqofu.aliasyou.ui.screens
 
+import android.app.NotificationManager
 import android.content.Context
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -30,12 +33,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.semyqofu.aliasyou.ui.LocalAppStrings
 import com.semyqofu.aliasyou.ui.components.bouncyClickable
+import com.semyqofu.aliasyou.ui.components.isWideLandscape
 import com.semyqofu.aliasyou.ui.components.pulsing
+import com.semyqofu.aliasyou.ui.theme.OnSuccessGreenContainer
 import com.semyqofu.aliasyou.ui.theme.SuccessGreen
 import com.semyqofu.aliasyou.ui.theme.SuccessGreenContainer
 import com.semyqofu.aliasyou.viewmodel.GameSettings
@@ -95,12 +101,11 @@ fun GameScreen(
             timeLeft--
         }
         isRoundActive = false
-        try {
-            android.media.ToneGenerator(android.media.AudioManager.STREAM_ALARM, 100)
-                .startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 500)
-        } catch (e: Exception) {
-            e.printStackTrace()
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        if (audioManager?.ringerMode != AudioManager.RINGER_MODE_SILENT) {
+            triggerVibration(120)
         }
+        playRoundEndTone(context)
     }
 
     val isUrgent = timeLeft in 1..10
@@ -188,13 +193,7 @@ fun GameScreen(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        val headerCard: @Composable () -> Unit = {
             // Header: Team name + Round score + Timer
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -280,14 +279,14 @@ fun GameScreen(
                                     imageVector = Icons.Rounded.Timer,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
-                                    tint = if (isUrgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
+                                    tint = if (isUrgent) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "$timeLeft",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = if (isUrgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer
+                                    color = if (isUrgent) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                             }
                         }
@@ -310,9 +309,9 @@ fun GameScreen(
                     )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
+        val upHintPill: @Composable () -> Unit = {
             // Upper Hint Pill (ОТГАДАНО)
             val upScale = if (isDraggingUp) 1f + (dragFraction * 0.12f) else 1f
             Surface(
@@ -331,7 +330,7 @@ fun GameScreen(
                     Icon(
                         imageVector = Icons.Rounded.ArrowUpward,
                         contentDescription = null,
-                        tint = if (isDraggingUp) SuccessGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isDraggingUp) OnSuccessGreenContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -339,29 +338,29 @@ fun GameScreen(
                         text = strings.guessedPill,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (isDraggingUp) SuccessGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (isDraggingUp) OnSuccessGreenContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         letterSpacing = 0.5.sp
                     )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.weight(1f))
+        // Two-Card Stack (Deck Pattern)
+        val currentWord = words.getOrNull(currentIndex + wordsProcessed)
+            ?.let(::formatCardText)
+            ?: strings.outOfWords
 
-            // Two-Card Stack (Deck Pattern)
-            val currentWord = words.getOrNull(currentIndex + wordsProcessed)
-                ?.let(::formatCardText)
-                ?: strings.outOfWords
+        val nextWord = words.getOrNull(currentIndex + wordsProcessed + 1)
+            ?.let(::formatCardText)
 
-            val nextWord = words.getOrNull(currentIndex + wordsProcessed + 1)
-                ?.let(::formatCardText)
+        val cardColor = MaterialTheme.colorScheme.primary
+        val onCardColor = MaterialTheme.colorScheme.onPrimary
 
-            val cardColor = MaterialTheme.colorScheme.primary
-            val onCardColor = MaterialTheme.colorScheme.onPrimary
-
+        val wordDeck: @Composable (Dp) -> Unit = { deckCardHeight ->
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp),
+                    .height(deckCardHeight + 10.dp),
                 contentAlignment = Alignment.Center
             ) {
                 // Card 2: Background Next Card (revealed smoothly underneath)
@@ -373,7 +372,7 @@ fun GameScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth(0.96f)
-                            .height(290.dp)
+                            .height(deckCardHeight)
                             .graphicsLayer {
                                 scaleX = bgScale
                                 scaleY = bgScale
@@ -400,7 +399,7 @@ fun GameScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(290.dp)
+                        .height(deckCardHeight)
                         .zIndex(2f)
                         .graphicsLayer {
                             translationY = dragY
@@ -482,9 +481,9 @@ fun GameScreen(
                     )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.weight(1f))
-
+        val downHintPill: @Composable () -> Unit = {
             // Lower Hint Pill (ПРОПУСК)
             val downScale = if (isDraggingDown) 1f + (dragFraction * 0.12f) else 1f
             Surface(
@@ -492,8 +491,7 @@ fun GameScreen(
                 color = if (isDraggingDown) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier
                     .scale(downScale)
-                    .width(180.dp)
-                    .padding(bottom = 16.dp),
+                    .width(180.dp),
                 tonalElevation = if (isDraggingDown) 4.dp else 0.dp
             ) {
                 Row(
@@ -504,7 +502,7 @@ fun GameScreen(
                     Icon(
                         imageVector = Icons.Rounded.ArrowDownward,
                         contentDescription = null,
-                        tint = if (isDraggingDown) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isDraggingDown) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -512,9 +510,72 @@ fun GameScreen(
                         text = strings.skipPill(settings.skipPenalty),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (isDraggingDown) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (isDraggingDown) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         letterSpacing = 0.5.sp
                     )
+                }
+            }
+        }
+
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+        ) {
+            if (isWideLandscape(maxWidth, maxHeight)) {
+                val deckHeight = (maxHeight * 0.52f).coerceIn(240.dp, 320.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 36.dp, vertical = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(36.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier.weight(0.85f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(modifier = Modifier.widthIn(max = 420.dp)) {
+                            headerCard()
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1.15f)
+                            .fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        upHintPill()
+                        Box(modifier = Modifier.widthIn(max = 460.dp)) {
+                            wordDeck(deckHeight)
+                        }
+                        downHintPill()
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = 540.dp)
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        headerCard()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        upHintPill()
+                        Spacer(modifier = Modifier.weight(1f))
+                        wordDeck(290.dp)
+                        Spacer(modifier = Modifier.weight(1f))
+                        Box(modifier = Modifier.padding(bottom = 16.dp)) {
+                            downHintPill()
+                        }
+                    }
                 }
             }
         }
@@ -576,6 +637,49 @@ private fun formatCardText(raw: String): String {
     val hasLowercase = trimmed.any { it.isLowerCase() }
     val normalized = if (hasLowercase) trimmed else trimmed.lowercase()
     return normalized.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+}
+
+/**
+ * Checks whether system ringer mode, Do Not Disturb filter, and media volume permit playing
+ * the round-end audio cue.
+ */
+internal fun isSoundPlaybackAllowed(
+    ringerMode: Int,
+    interruptionFilter: Int?,
+    musicVolume: Int,
+    isMusicMuted: Boolean
+): Boolean {
+    if (ringerMode != AudioManager.RINGER_MODE_NORMAL) return false
+    if (interruptionFilter != null && interruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL) {
+        return false
+    }
+    return musicVolume > 0 && !isMusicMuted
+}
+
+private suspend fun playRoundEndTone(context: Context) {
+    val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+    val allowed = isSoundPlaybackAllowed(
+        ringerMode = audioManager.ringerMode,
+        interruptionFilter = notificationManager?.currentInterruptionFilter,
+        musicVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC),
+        isMusicMuted = audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
+    )
+    if (!allowed) return
+
+    var toneGenerator: ToneGenerator? = null
+    try {
+        toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 85)
+        toneGenerator.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 500)
+        kotlinx.coroutines.delay(550)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    } finally {
+        try {
+            toneGenerator?.release()
+        } catch (_: Exception) {
+        }
+    }
 }
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)

@@ -45,6 +45,7 @@ import com.semyqofu.aliasyou.ui.AppStrings
 import com.semyqofu.aliasyou.ui.components.Md3ExpressiveShape
 import com.semyqofu.aliasyou.ui.components.bouncyClickable
 import com.semyqofu.aliasyou.ui.components.computeExpressiveRadius
+import com.semyqofu.aliasyou.ui.components.isWideLandscape
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -102,7 +103,7 @@ fun LanguageOnboardingScreen(
     )
 
     val topBlobColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-    val bottomBlobColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.58f)
+    val bottomBlobColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f)
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -136,72 +137,60 @@ fun LanguageOnboardingScreen(
                 )
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .systemBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Top-left circular Pixel badge
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
+            val topBadge: @Composable () -> Unit = {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    tonalElevation = 2.dp,
+                    modifier = Modifier.size(52.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        tonalElevation = 2.dp,
-                        modifier = Modifier.size(52.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Rounded.Casino,
-                                contentDescription = "Alias You",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Casino,
+                            contentDescription = "Alias You",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(26.dp)
+                        )
                     }
                 }
+            }
 
-                // Bottom-center Greeting, Language Picker & Pixel Navigation Pills
+            val greetingSection: @Composable (TextAlign) -> Unit = { alignment ->
+                AnimatedContent(
+                    targetState = strings,
+                    transitionSpec = {
+                        (fadeIn(tween(300)) + slideInVertically(spring(dampingRatio = Spring.DampingRatioMediumBouncy)) { 24 } + scaleIn(initialScale = 0.94f))
+                            .togetherWith(fadeOut(tween(200)) + slideOutVertically { -20 } + scaleOut(targetScale = 0.96f))
+                    },
+                    label = "greetingTransition"
+                ) { s ->
+                    Column(
+                        horizontalAlignment = if (alignment == TextAlign.Start) Alignment.Start else Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = s.onboardingGreeting,
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = alignment
+                        )
+                        Text(
+                            text = s.onboardingSubtitle,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = alignment
+                        )
+                    }
+                }
+            }
+
+            val pickerAndActions: @Composable () -> Unit = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // Animated Greeting ("Привет!" / "Hello!")
-                    AnimatedContent(
-                        targetState = strings,
-                        transitionSpec = {
-                            (fadeIn(tween(300)) + slideInVertically(spring(dampingRatio = Spring.DampingRatioMediumBouncy)) { 24 } + scaleIn(initialScale = 0.94f))
-                                .togetherWith(fadeOut(tween(200)) + slideOutVertically { -20 } + scaleOut(targetScale = 0.96f))
-                        },
-                        label = "greetingTransition"
-                    ) { s ->
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = s.onboardingGreeting,
-                                style = MaterialTheme.typography.displayMedium,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = s.onboardingSubtitle,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
-                        }
-                    }
-
                     // Language Choice Pills (Russian / English)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -230,8 +219,6 @@ fun LanguageOnboardingScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(4.dp))
 
                     // Pixel-style Bottom Action Row (Language toggle pill + Primary Arrow pill)
                     Row(
@@ -299,6 +286,74 @@ fun LanguageOnboardingScreen(
                                     contentDescription = null,
                                     modifier = Modifier.size(22.dp)
                                 )
+                            }
+                        }
+                    }
+                }
+            }
+
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
+            ) {
+                if (isWideLandscape(maxWidth, maxHeight)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(36.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .padding(vertical = 12.dp),
+                            verticalArrangement = Arrangement.SpaceBetween,
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            topBadge()
+                            greetingSection(TextAlign.Start)
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(modifier = Modifier.widthIn(max = 460.dp)) {
+                                pickerAndActions()
+                            }
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .widthIn(max = 520.dp)
+                                .fillMaxSize(),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                topBadge()
+                            }
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(24.dp)
+                            ) {
+                                greetingSection(TextAlign.Center)
+                                pickerAndActions()
                             }
                         }
                     }

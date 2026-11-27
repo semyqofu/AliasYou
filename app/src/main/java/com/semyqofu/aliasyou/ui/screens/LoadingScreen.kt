@@ -4,7 +4,9 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material3.*
@@ -152,7 +154,7 @@ fun Md3MorphingShape(
             imageVector = Icons.Rounded.AutoAwesome,
             contentDescription = null,
             modifier = Modifier.size(34.dp),
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
 }
@@ -178,6 +180,8 @@ fun LoadingScreen(message: String? = null) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .systemBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center

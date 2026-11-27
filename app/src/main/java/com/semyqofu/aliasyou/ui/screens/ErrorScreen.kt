@@ -6,6 +6,8 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -60,13 +62,21 @@ fun ErrorScreen(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .systemBarsPadding(),
+            contentAlignment = Alignment.Center
         ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 500.dp)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
             ElevatedCard(
                 shape = MaterialTheme.shapes.extraLarge,
                 colors = CardDefaults.elevatedCardColors(
@@ -84,7 +94,7 @@ fun ErrorScreen(
                 ) {
                     Surface(
                         shape = Md3ExpressivePolygonShape(Md3ExpressiveShape.COOKIE_4, rotationDegrees = 45f),
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
+                        color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.14f),
                         modifier = Modifier.size(68.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -92,7 +102,7 @@ fun ErrorScreen(
                                 imageVector = Icons.Rounded.CloudOff,
                                 contentDescription = strings.errorIconCd,
                                 modifier = Modifier.size(34.dp),
-                                tint = MaterialTheme.colorScheme.error
+                                tint = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
                     }
@@ -191,6 +201,7 @@ fun ErrorScreen(
                     )
                 }
             }
+        }
         }
     }
 }

@@ -34,6 +34,7 @@ import com.semyqofu.aliasyou.ui.LocalAppStrings
 import com.semyqofu.aliasyou.ui.components.Md3ExpressivePolygonShape
 import com.semyqofu.aliasyou.ui.components.Md3ExpressiveShape
 import com.semyqofu.aliasyou.ui.components.bouncyClickable
+import com.semyqofu.aliasyou.ui.components.isWideLandscape
 import com.semyqofu.aliasyou.ui.components.pulsing
 
 @Composable
@@ -85,283 +86,326 @@ fun GameOverScreen(winner: String, finalScores: Map<String, Int>, onRestart: () 
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+        val winnerHeroCard: @Composable () -> Unit = {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
             ) {
-                // Winner Hero Card (Compact, Solid MD3 Container, No Gradients)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Solid Tonal Trophy Badge in 9-sided sunny expressive shape
+                    Surface(
+                        shape = Md3ExpressivePolygonShape(Md3ExpressiveShape.SUNNY_9),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier
+                            .size(72.dp)
+                            .pulsing(minScale = 0.94f, maxScale = 1.06f, durationMs = 1400),
+                        tonalElevation = 2.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.EmojiEvents,
+                                contentDescription = strings.trophyCd,
+                                modifier = Modifier.size(38.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Celebration,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = strings.gameOverBadge,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                letterSpacing = 0.8.sp
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.Rounded.Celebration,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = strings.winnerLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = winner,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) {
+                        Text(
+                            text = strings.pointsBadge(winningScore),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        val leaderboardCard: @Composable () -> Unit = {
+            AnimatedVisibility(
+                visible = contentVisible,
+                enter = fadeIn(spring()) + slideInVertically(initialOffsetY = { 40 })
+            ) {
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.extraLarge,
                     colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ),
-                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                    shape = MaterialTheme.shapes.extraLarge,
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 18.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .padding(16.dp)
                     ) {
-                        // Solid Tonal Trophy Badge in 9-sided sunny expressive shape
-                        Surface(
-                            shape = Md3ExpressivePolygonShape(Md3ExpressiveShape.SUNNY_9),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier
-                                .size(72.dp)
-                                .pulsing(minScale = 0.94f, maxScale = 1.06f, durationMs = 1400),
-                            tonalElevation = 2.dp
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 10.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Rounded.EmojiEvents,
-                                    contentDescription = strings.trophyCd,
-                                    modifier = Modifier.size(38.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.secondaryContainer
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Celebration,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = strings.gameOverBadge,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    letterSpacing = 0.8.sp
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Icon(
-                                    imageVector = Icons.Rounded.Celebration,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = strings.winnerLabel,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        Text(
-                            text = winner,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.surfaceContainerHighest
-                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Leaderboard,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = strings.pointsBadge(winningScore),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
+                                text = strings.finalLeaderboardTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                    }
-                }
 
-                // Middle Section: Leaderboard Card (Compact, Clean MD3 Container)
-                AnimatedVisibility(
-                    visible = contentVisible,
-                    enter = fadeIn(spring()) + slideInVertically(initialOffsetY = { 40 })
-                ) {
-                    ElevatedCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                        ),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(bottom = 10.dp)
+                        sortedScores.forEachIndexed { index, (team, score) ->
+                            val isWinner = index == 0
+
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 3.dp),
+                                shape = MaterialTheme.shapes.medium,
+                                color = if (isWinner) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceContainerHigh
+                                }
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Leaderboard,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = strings.finalLeaderboardTitle,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            sortedScores.forEachIndexed { index, (team, score) ->
-                                val isWinner = index == 0
-
-                                Surface(
+                                Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 3.dp),
-                                    shape = MaterialTheme.shapes.medium,
-                                    color = if (isWinner) {
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceContainerHigh
-                                    }
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 14.dp, vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f)
                                     ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.weight(1f)
+                                        val rankShape = when (index) {
+                                            0 -> Md3ExpressivePolygonShape(Md3ExpressiveShape.COOKIE_4, rotationDegrees = 15f)
+                                            1 -> Md3ExpressivePolygonShape(Md3ExpressiveShape.COOKIE_3)
+                                            2 -> Md3ExpressivePolygonShape(Md3ExpressiveShape.SQUIRCLE)
+                                            else -> CircleShape
+                                        }
+                                        Surface(
+                                            shape = rankShape,
+                                            color = when (index) {
+                                                0 -> MaterialTheme.colorScheme.primary
+                                                1 -> MaterialTheme.colorScheme.secondary
+                                                2 -> MaterialTheme.colorScheme.tertiary
+                                                else -> MaterialTheme.colorScheme.surfaceVariant
+                                            },
+                                            modifier = Modifier.size(28.dp)
                                         ) {
-                                            val rankShape = when (index) {
-                                                0 -> Md3ExpressivePolygonShape(Md3ExpressiveShape.COOKIE_4, rotationDegrees = 15f)
-                                                1 -> Md3ExpressivePolygonShape(Md3ExpressiveShape.COOKIE_3)
-                                                2 -> Md3ExpressivePolygonShape(Md3ExpressiveShape.SQUIRCLE)
-                                                else -> CircleShape
-                                            }
-                                            Surface(
-                                                shape = rankShape,
-                                                color = when (index) {
-                                                    0 -> MaterialTheme.colorScheme.primary
-                                                    1 -> MaterialTheme.colorScheme.secondary
-                                                    2 -> MaterialTheme.colorScheme.tertiary
-                                                    else -> MaterialTheme.colorScheme.surfaceVariant
-                                                },
-                                                modifier = Modifier.size(28.dp)
-                                            ) {
-                                                Box(contentAlignment = Alignment.Center) {
-                                                    if (index == 0) {
-                                                        Icon(
-                                                            imageVector = Icons.Rounded.WorkspacePremium,
-                                                            contentDescription = null,
-                                                            tint = MaterialTheme.colorScheme.onPrimary,
-                                                            modifier = Modifier.size(15.dp)
-                                                        )
-                                                    } else {
-                                                        Text(
-                                                            text = "${index + 1}",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontWeight = FontWeight.ExtraBold,
-                                                            color = when (index) {
-                                                                1 -> MaterialTheme.colorScheme.onSecondary
-                                                                2 -> MaterialTheme.colorScheme.onTertiary
-                                                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                                            }
-                                                        )
-                                                    }
+                                            Box(contentAlignment = Alignment.Center) {
+                                                if (index == 0) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.WorkspacePremium,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                                        modifier = Modifier.size(15.dp)
+                                                    )
+                                                } else {
+                                                    Text(
+                                                        text = "${index + 1}",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.ExtraBold,
+                                                        color = when (index) {
+                                                            1 -> MaterialTheme.colorScheme.onSecondary
+                                                            2 -> MaterialTheme.colorScheme.onTertiary
+                                                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                                        }
+                                                    )
                                                 }
                                             }
-                                            Spacer(modifier = Modifier.width(10.dp))
-                                            Text(
-                                                text = team,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Medium,
-                                                color = if (isWinner) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                                            )
                                         }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Text(
+                                            text = team,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isWinner) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
 
-                                        Surface(
-                                            shape = MaterialTheme.shapes.small,
-                                            color = if (isWinner) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                                        ) {
-                                            Text(
-                                                text = strings.pointsShort(score),
-                                                style = MaterialTheme.typography.labelMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (isWinner) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
-                                            )
-                                        }
+                                    Surface(
+                                        shape = MaterialTheme.shapes.small,
+                                        color = if (isWinner) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                                    ) {
+                                        Text(
+                                            text = strings.pointsShort(score),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isWinner) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                        )
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
+        }
 
-                // Bottom Section: Action Button (Tightly grouped)
-                Button(
-                    onClick = {
+        val restartButton: @Composable () -> Unit = {
+            Button(
+                onClick = {
+                    triggerVibration(45)
+                    onRestart()
+                },
+                modifier = Modifier
+                    .widthIn(max = 420.dp)
+                    .fillMaxWidth()
+                    .height(54.dp)
+                    .bouncyClickable {
                         triggerVibration(45)
                         onRestart()
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp)
-                        .bouncyClickable {
-                            triggerVibration(45)
-                            onRestart()
-                        },
-                    shape = MaterialTheme.shapes.large,
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
+                shape = MaterialTheme.shapes.large,
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                    Icon(
+                        imageVector = Icons.Rounded.Home,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = strings.backToMainMenu,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding(),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isWideLandscape(maxWidth, maxHeight)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 36.dp, vertical = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(28.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(0.95f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(18.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Home,
-                            contentDescription = null,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = strings.backToMainMenu,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        winnerHeroCard()
+                        restartButton()
                     }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1.05f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(modifier = Modifier.widthIn(max = 540.dp)) {
+                            leaderboardCard()
+                        }
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 560.dp)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    winnerHeroCard()
+                    leaderboardCard()
+                    restartButton()
                 }
             }
         }

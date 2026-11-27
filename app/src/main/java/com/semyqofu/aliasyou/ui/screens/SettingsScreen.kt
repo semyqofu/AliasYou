@@ -38,6 +38,7 @@ import com.semyqofu.aliasyou.ui.components.Md3ExpressivePolygonShape
 import com.semyqofu.aliasyou.ui.components.Md3ExpressiveShape
 import com.semyqofu.aliasyou.ui.components.SkullIcon
 import com.semyqofu.aliasyou.ui.components.bouncyClickable
+import com.semyqofu.aliasyou.ui.components.isWideLandscape
 import com.semyqofu.aliasyou.ui.theme.SuccessGreen
 
 data class ModelOption(
@@ -521,7 +522,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Rounded.Casino,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -621,6 +622,7 @@ fun SettingsScreen(
                     )
                 },
                 modifier = Modifier
+                    .widthIn(max = 420.dp)
                     .fillMaxWidth(0.92f)
                     .height(56.dp)
                     .bouncyClickable {
@@ -636,14 +638,7 @@ fun SettingsScreen(
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+        val aiProviderCard: @Composable () -> Unit = {
             // Card 1: AI Provider & Model Selection
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -715,9 +710,9 @@ fun SettingsScreen(
                                         .size(6.dp)
                                         .clip(CircleShape)
                                         .background(
-                                            if (isOfflineMode) MaterialTheme.colorScheme.secondary
+                                            if (isOfflineMode) MaterialTheme.colorScheme.onSecondaryContainer
                                             else if (isCurrentProviderConfigured) SuccessGreen
-                                            else MaterialTheme.colorScheme.error
+                                            else MaterialTheme.colorScheme.onErrorContainer
                                         )
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -765,7 +760,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = Icons.Rounded.AutoAwesome,
                                     contentDescription = null,
-                                    tint = if (isGemini) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = if (isGemini) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -801,7 +796,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = Icons.Rounded.SmartToy,
                                     contentDescription = null,
-                                    tint = if (isGiga) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = if (isGiga) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -841,7 +836,7 @@ fun SettingsScreen(
                                             Icon(
                                                 imageVector = model.icon,
                                                 contentDescription = null,
-                                                tint = if (isSelected) MaterialTheme.colorScheme.primary else model.tint,
+                                                tint = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else model.tint,
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         },
@@ -870,7 +865,7 @@ fun SettingsScreen(
                                             Icon(
                                                 imageVector = model.icon,
                                                 contentDescription = null,
-                                                tint = if (isSelected) MaterialTheme.colorScheme.secondary else model.tint,
+                                                tint = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else model.tint,
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         },
@@ -917,7 +912,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = Icons.Rounded.WifiOff,
                                     contentDescription = null,
-                                    tint = if (isOfflineMode) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = if (isOfflineMode) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
@@ -956,7 +951,9 @@ fun SettingsScreen(
                     }
                 }
             }
+        }
 
+        val themeDifficultyCard: @Composable () -> Unit = {
             // Card 2: Theme & Difficulty
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -1023,9 +1020,19 @@ fun SettingsScreen(
                                             triggerVibration(15)
                                             theme = item
                                         },
-                                        label = { Text(item) },
+                                        label = {
+                                            Text(
+                                                text = item,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                            )
+                                        },
                                         colors = SuggestionChipDefaults.suggestionChipColors(
-                                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+                                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                            labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                        ),
+                                        border = SuggestionChipDefaults.suggestionChipBorder(
+                                            enabled = true,
+                                            borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
                                         ),
                                         shape = MaterialTheme.shapes.small
                                     )
@@ -1069,8 +1076,9 @@ fun SettingsScreen(
                                         imageVector = icon,
                                         contentDescription = null,
                                         tint = when {
+                                            isSelected && isSkullMode -> MaterialTheme.colorScheme.onErrorContainer
                                             isSkullMode -> MaterialTheme.colorScheme.error
-                                            isSelected -> MaterialTheme.colorScheme.primary
+                                            isSelected -> MaterialTheme.colorScheme.onSecondaryContainer
                                             else -> tintColor
                                         },
                                         modifier = Modifier.size(16.dp)
@@ -1087,7 +1095,7 @@ fun SettingsScreen(
                                     FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
                                         selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer,
-                                        selectedLeadingIconColor = MaterialTheme.colorScheme.error
+                                        selectedLeadingIconColor = MaterialTheme.colorScheme.onErrorContainer
                                     )
                                 } else {
                                     FilterChipDefaults.filterChipColors()
@@ -1111,7 +1119,9 @@ fun SettingsScreen(
                     }
                 }
             }
+        }
 
+        val roundSettingsCard: @Composable () -> Unit = {
             // Card 3: Game Settings (Sliders)
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -1211,8 +1221,64 @@ fun SettingsScreen(
                     )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(90.dp))
+        BoxWithConstraints(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            if (isWideLandscape(maxWidth, maxHeight)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        aiProviderCard()
+                        themeDifficultyCard()
+                        Spacer(modifier = Modifier.height(92.dp))
+                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        roundSettingsCard()
+                        Spacer(modifier = Modifier.height(92.dp))
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = 620.dp)
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        aiProviderCard()
+                        themeDifficultyCard()
+                        roundSettingsCard()
+                        Spacer(modifier = Modifier.height(90.dp))
+                    }
+                }
+            }
         }
     }
 }

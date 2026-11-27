@@ -6,9 +6,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -16,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -35,7 +41,12 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        val isTablet = resources.configuration.smallestScreenWidthDp >= 600
+        requestedOrientation = if (isTablet) {
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
         enableEdgeToEdge()
         setContent {
             AliasYouTheme {
@@ -66,40 +77,47 @@ class MainActivity : ComponentActivity() {
                         else -> "settings"
                     }
 
-                    NavHost(
-                        navController = navController,
-                        startDestination = startDestination,
-                        enterTransition = {
-                            slideInHorizontally(
-                                initialOffsetX = { fullWidth -> fullWidth },
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessMediumLow
-                                )
-                            ) + fadeIn(animationSpec = tween(300))
-                        },
-                        exitTransition = {
-                            slideOutHorizontally(
-                                targetOffsetX = { fullWidth -> -fullWidth / 3 },
-                                animationSpec = tween(300)
-                            ) + fadeOut(animationSpec = tween(200))
-                        },
-                        popEnterTransition = {
-                            slideInHorizontally(
-                                initialOffsetX = { fullWidth -> -fullWidth / 3 },
-                                animationSpec = tween(300)
-                            ) + fadeIn(animationSpec = tween(300))
-                        },
-                        popExitTransition = {
-                            slideOutHorizontally(
-                                targetOffsetX = { fullWidth -> fullWidth },
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessMediumLow
-                                )
-                            ) + fadeOut(animationSpec = tween(200))
-                        }
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
                     ) {
+                        NavHost(
+                            navController = navController,
+                            startDestination = startDestination,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background),
+                            enterTransition = {
+                                slideInHorizontally(
+                                    initialOffsetX = { fullWidth -> fullWidth },
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioNoBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
+                                    )
+                                ) + fadeIn(animationSpec = tween(260, easing = FastOutSlowInEasing))
+                            },
+                            exitTransition = {
+                                slideOutHorizontally(
+                                    targetOffsetX = { fullWidth -> -fullWidth / 3 },
+                                    animationSpec = tween(280, easing = FastOutSlowInEasing)
+                                ) + fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing))
+                            },
+                            popEnterTransition = {
+                                slideInHorizontally(
+                                    initialOffsetX = { fullWidth -> -fullWidth / 3 },
+                                    animationSpec = tween(280, easing = FastOutSlowInEasing)
+                                ) + fadeIn(animationSpec = tween(260, easing = FastOutSlowInEasing))
+                            },
+                            popExitTransition = {
+                                slideOutHorizontally(
+                                    targetOffsetX = { fullWidth -> fullWidth },
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioNoBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
+                                    )
+                                ) + fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing))
+                            }
+                        ) {
                         composable("onboarding") {
                             LanguageOnboardingScreen(
                                 initialLanguage = appLanguage,
@@ -165,9 +183,12 @@ class MainActivity : ComponentActivity() {
                         composable("start") {
                             AnimatedContent(
                                 targetState = uiState,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background),
                                 transitionSpec = {
-                                    (fadeIn(animationSpec = tween(350)) + scaleIn(initialScale = 0.94f))
-                                        .togetherWith(fadeOut(animationSpec = tween(250)) + scaleOut(targetScale = 1.04f))
+                                    (fadeIn(animationSpec = tween(320)) + scaleIn(initialScale = 0.96f))
+                                        .togetherWith(fadeOut(animationSpec = tween(220)) + scaleOut(targetScale = 1.02f))
                                 },
                                 label = "StartContentTransition"
                             ) { state ->
@@ -205,9 +226,12 @@ class MainActivity : ComponentActivity() {
                         composable("game") {
                             AnimatedContent(
                                 targetState = uiState,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background),
                                 transitionSpec = {
-                                    (fadeIn(animationSpec = tween(350)) + scaleIn(initialScale = 0.94f))
-                                        .togetherWith(fadeOut(animationSpec = tween(250)) + scaleOut(targetScale = 1.04f))
+                                    (fadeIn(animationSpec = tween(320)) + scaleIn(initialScale = 0.96f))
+                                        .togetherWith(fadeOut(animationSpec = tween(220)) + scaleOut(targetScale = 1.02f))
                                 },
                                 label = "GameContentTransition"
                             ) { state ->
@@ -265,6 +289,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                    }
                     }
                 }
             }

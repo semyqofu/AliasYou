@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -237,3 +238,9 @@ class Md3ExpressivePolygonShape(
         return Outline.Generic(path)
     }
 }
+
+/**
+ * Returns true when the window is wide landscape (e.g., tablet in landscape orientation).
+ */
+fun isWideLandscape(maxWidth: Dp, maxHeight: Dp): Boolean =
+    maxWidth >= 700.dp && maxWidth > maxHeight
