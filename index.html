@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alias You — игра в слова для компании с ИИ и офлайн-словарём</title>
+  <meta name="description" content="Alias You — современная Android-игра в слова для компании в стиле Material Design 3 Expressive с генерацией карточек через Google Gemini и Сбер GigaChat и 10 000+ слов офлайн.">
+  <meta name="theme-color" content="#5B4DF5">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Decorative MD3 Expressive backdrop shapes -->
+  <div class="ambient-layer" aria-hidden="true">
+    <svg class="ambient-shape ambient-shape--top" viewBox="0 0 200 200">
+      <path d="M198.7,100.0L198.2,106.4L195.9,112.6L190.9,118.1L182.8,122.2L173.5,124.9L165.7,127.2L162.1,130.6L162.9,136.3L166.4,144.4L169.8,153.6L170.8,162.1L168.9,168.9L165.0,174.1L160.1,178.3L154.5,181.6L147.9,183.0L140.2,181.6L131.9,177.1L124.3,171.4L118.1,167.7L113.6,168.3L109.7,173.8L105.4,182.1L100.0,190.0L93.8,195.1L87.2,197.1L80.8,196.7L74.5,195.2L68.6,192.5L63.7,187.6L60.6,179.8L59.5,170.2L59.2,161.1L57.8,155.0L53.5,153.0L45.9,154.1L36.4,155.8L27.1,155.9L19.9,153.5L14.9,149.1L11.5,143.6L9.0,137.7L8.1,131.2L9.8,124.2L14.8,117.0L21.9,110.3L28.3,104.7L30.9,100.0L28.3,95.3L21.9,89.7L14.8,83.0L9.8,75.8L8.1,68.8L9.0,62.3L11.5,56.4L14.9,50.9L19.9,46.5L27.1,44.1L36.4,44.2L45.9,45.9L53.5,47.0L57.8,45.0L59.2,38.9L59.5,29.8L60.6,20.2L63.7,12.4L68.6,7.5L74.5,4.8L80.8,3.3L87.2,2.9L93.8,4.9L100.0,10.0L105.4,17.9L109.7,26.2L113.6,31.7L118.1,32.3L124.3,28.6L131.9,22.9L140.2,18.4L147.9,17.0L154.5,18.4L160.1,21.7L165.0,25.9L168.9,31.1L170.8,37.9L169.8,46.4L166.4,55.6L162.9,63.7L162.1,69.4L165.7,72.8L173.5,75.1L182.8,77.8L190.9,81.9L195.9,87.4L198.2,93.6Z" />
+    </svg>
+    <svg class="ambient-shape ambient-shape--bottom" viewBox="0 0 200 200">
+      <path d="M198.7,100.0L197.7,106.4L194.0,112.4L186.4,117.2L177.0,120.6L170.4,123.9L169.7,128.9L174.0,136.5L178.6,145.4L180.0,153.5L178.0,159.9L174.1,165.0L168.8,168.8L161.3,169.9L151.9,167.7L143.0,164.3L136.9,164.0L134.2,169.4L132.7,178.8L129.9,188.0L125.2,193.9L119.2,196.7L112.8,197.5L106.3,196.0L100.0,190.7L94.6,182.3L90.1,174.8L85.5,172.9L79.4,177.0L71.7,183.4L63.7,187.6L56.7,187.8L50.7,185.5L45.6,181.4L42.3,175.2L41.9,166.3L43.6,156.4L44.1,149.0L40.1,146.0L31.4,145.8L21.4,145.4L13.7,142.6L9.1,137.6L6.6,131.7L6.1,125.2L8.8,118.1L15.4,111.1L22.8,105.1L26.1,100.0L22.8,94.9L15.4,88.9L8.8,81.9L6.1,74.8L6.6,68.3L9.1,62.4L13.7,57.4L21.4,54.6L31.4,54.2L40.1,54.0L44.1,51.0L43.6,43.6L41.9,33.7L42.3,24.8L45.6,18.6L50.7,14.5L56.7,12.2L63.7,12.4L71.7,16.6L79.4,23.0L85.5,27.1L90.1,25.2L94.6,17.7L100.0,9.3L106.3,4.0L112.8,2.5L119.2,3.3L125.2,6.1L129.9,12.0L132.7,21.2L134.2,30.6L136.9,36.0L143.0,35.7L151.9,32.3L161.3,30.1L168.8,31.2L174.1,35.0L178.0,40.1L180.0,46.5L178.6,54.6L174.0,63.5L169.7,71.1L170.4,76.1L177.0,79.4L186.4,82.8L194.0,87.6L197.7,93.6Z" />
+    </svg>
+  </div>
+
+  <!-- Top App Bar -->
+  <header class="top-bar-wrap">
+    <nav class="top-bar" aria-label="Основная навигация">
+      <a class="brand" href="#top">
+        <img class="brand__icon" src="assets/favicon.svg" alt="" width="36" height="36">
+        <span class="brand__name">Alias You</span>
+      </a>
+
+      <div class="top-bar__links">
+        <a class="nav-link" href="#about" data-i18n="nav.about">Об игре</a>
+        <a class="nav-link" href="#features" data-i18n="nav.features">Возможности</a>
+        <a class="nav-link" href="#screenshots" data-i18n="nav.screenshots">Скриншоты</a>
+        <a class="nav-link" href="#download" data-i18n="nav.download">Скачать</a>
+      </div>
+
+      <div class="top-bar__actions">
+        <button type="button" class="md-icon-btn" id="langToggle" aria-label="Switch language" title="RU / EN">
+          <span class="lang-badge" id="langLabel">EN</span>
+        </button>
+        <button type="button" class="md-icon-btn" id="themeToggle" aria-label="Переключить тему" title="Тема">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+        <a class="md-btn md-btn--filled md-btn--compact" href="https://github.com/semyqofu/AliasYou/releases/latest/download/app-release.apk" download="app-release.apk">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span data-i18n="nav.cta">APK</span>
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top" class="page-shell">
+    <!-- Hero Section -->
+    <section class="hero" id="about" aria-labelledby="hero-title">
+      <div class="hero__content">
+        <div class="eyebrow-chip">
+          <svg class="eyebrow-chip__shape" viewBox="0 0 200 200" aria-hidden="true">
+            <path fill="currentColor" d="M198.7,100.0L198.2,106.4L195.9,112.6L190.9,118.1L182.8,122.2L173.5,124.9L165.7,127.2L162.1,130.6L162.9,136.3L166.4,144.4L169.8,153.6L170.8,162.1L168.9,168.9L165.0,174.1L160.1,178.3L154.5,181.6L147.9,183.0L140.2,181.6L131.9,177.1L124.3,171.4L118.1,167.7L113.6,168.3L109.7,173.8L105.4,182.1L100.0,190.0L93.8,195.1L87.2,197.1L80.8,196.7L74.5,195.2L68.6,192.5L63.7,187.6L60.6,179.8L59.5,170.2L59.2,161.1L57.8,155.0L53.5,153.0L45.9,154.1L36.4,155.8L27.1,155.9L19.9,153.5L14.9,149.1L11.5,143.6L9.0,137.7L8.1,131.2L9.8,124.2L14.8,117.0L21.9,110.3L28.3,104.7L30.9,100.0L28.3,95.3L21.9,89.7L14.8,83.0L9.8,75.8L8.1,68.8L9.0,62.3L11.5,56.4L14.9,50.9L19.9,46.5L27.1,44.1L36.4,44.2L45.9,45.9L53.5,47.0L57.8,45.0L59.2,38.9L59.5,29.8L60.6,20.2L63.7,12.4L68.6,7.5L74.5,4.8L80.8,3.3L87.2,2.9L93.8,4.9L100.0,10.0L105.4,17.9L109.7,26.2L113.6,31.7L118.1,32.3L124.3,28.6L131.9,22.9L140.2,18.4L147.9,17.0L154.5,18.4L160.1,21.7L165.0,25.9L168.9,31.1L170.8,37.9L169.8,46.4L166.4,55.6L162.9,63.7L162.1,69.4L165.7,72.8L173.5,75.1L182.8,77.8L190.9,81.9L195.9,87.4L198.2,93.6Z" />
+          </svg>
+          <span data-i18n="hero.eyebrow">Material 3 Expressive · Android 7.0+ · v2.1</span>
+        </div>
+
+        <h1 id="hero-title" class="hero__title" data-i18n="hero.title">
+          Умный Alias для яркой компании
+        </h1>
+
+        <p class="hero__subtitle" data-i18n="hero.subtitle">
+          Объясняйте слова команде на время без однокоренных слов. Генерируйте тематические колоды через <strong>Google Gemini</strong> и <strong>Сбер GigaChat</strong> или играйте полностью офлайн — в запасе более <strong>10 000 слов</strong> на русском и английском языках.
+        </p>
+
+        <div class="hero__actions">
+          <a class="md-btn md-btn--filled md-btn--xl" href="https://github.com/semyqofu/AliasYou/releases/latest/download/app-release.apk" download="app-release.apk">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span data-i18n="hero.download">Скачать APK</span>
+          </a>
+
+          <a class="md-btn md-btn--tonal md-btn--lg" href="https://github.com/semyqofu/AliasYou" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2Z" />
+            </svg>
+            <span data-i18n="hero.github">GitHub</span>
+          </a>
+        </div>
+
+        <dl class="hero__stats" aria-label="Ключевые показатели приложения">
+          <div class="stat-pill">
+            <dt data-i18n="stats.offlineLabel">Офлайн-база</dt>
+            <dd>10 000+</dd>
+          </div>
+          <div class="stat-pill">
+            <dt data-i18n="stats.aiLabel">Нейросети</dt>
+            <dd>Gemini &amp; GigaChat</dd>
+          </div>
+          <div class="stat-pill">
+            <dt data-i18n="stats.levelsLabel">Сложности</dt>
+            <dd data-i18n="stats.levelsValue">5 режимов</dd>
+          </div>
+        </dl>
+      </div>
+
+      <!-- Interactive MD3 Expressive Card Playground -->
+      <div class="hero__stage">
+        <div class="stage-backdrop" aria-hidden="true">
+          <svg class="stage-cookie" viewBox="0 0 200 200">
+            <path fill="currentColor" d="M198.7,100.0L198.5,106.5L197.6,112.9L195.9,119.1L193.1,124.9L188.8,130.2L183.2,134.5L176.5,137.7L169.2,140.0L162.0,141.5L155.6,142.7L150.4,144.2L146.6,146.6L144.2,150.4L142.7,155.6L141.5,162.0L140.0,169.2L137.7,176.5L134.5,183.2L130.2,188.8L124.9,193.1L119.1,195.9L112.9,197.6L106.5,198.5L100.0,198.7L93.5,198.5L87.1,197.6L80.9,195.9L75.1,193.1L69.8,188.8L65.5,183.2L62.3,176.5L60.0,169.2L58.5,162.0L57.3,155.6L55.8,150.4L53.4,146.6L49.6,144.2L44.4,142.7L38.0,141.5L30.8,140.0L23.5,137.7L16.8,134.5L11.2,130.2L6.9,124.9L4.1,119.1L2.4,112.9L1.5,106.5L1.3,100.0L1.5,93.5L2.4,87.1L4.1,80.9L6.9,75.1L11.2,69.8L16.8,65.5L23.5,62.3L30.8,60.0L38.0,58.5L44.4,57.3L49.6,55.8L53.4,53.4L55.8,49.6L57.3,44.4L58.5,38.0L60.0,30.8L62.3,23.5L65.5,16.8L69.8,11.2L75.1,6.9L80.9,4.1L87.1,2.4L93.5,1.5L100.0,1.3L106.5,1.5L112.9,2.4L119.1,4.1L124.9,6.9L130.2,11.2L134.5,16.8L137.7,23.5L140.0,30.8L141.5,38.0L142.7,44.4L144.2,49.6L146.6,53.4L150.4,55.8L155.6,57.3L162.0,58.5L169.2,60.0L176.5,62.3L183.2,65.5L188.8,69.8L193.1,75.1L195.9,80.9L197.6,87.1L198.5,93.5Z" />
+          </svg>
+        </div>
+
+        <div class="demo-phone" role="region" aria-label="Интерактивная карточка игры">
+          <div class="demo-phone__hud">
+            <div>
+              <span class="demo-phone__hud-label" data-i18n="demo.teamLabel">ХОД КОМАНДЫ</span>
+              <strong class="demo-phone__team" data-i18n="demo.teamName">Снежные Барсы</strong>
+            </div>
+            <div class="demo-phone__badges">
+              <span class="hud-chip hud-chip--score">
+                <span data-i18n="demo.scorePrefix">Очки:</span>
+                <strong id="demoScore">0</strong>
+              </span>
+              <span class="hud-chip hud-chip--timer">60s</span>
+            </div>
+          </div>
+
+          <button type="button" class="swipe-hint swipe-hint--up" id="demoGuessBtn">
+            <span aria-hidden="true">↑</span>
+            <span data-i18n="demo.guessed">ОТГАДАНО (+1)</span>
+          </button>
+
+          <div class="demo-card-stack">
+            <div class="demo-card-ghost" aria-hidden="true"></div>
+            <div class="demo-card" id="demoCard">
+              <span class="demo-card__index" id="demoCardIndex">№ 1</span>
+              <span class="demo-card__word" id="demoCardWord">Местоположение</span>
+              <span class="demo-card__category" id="demoCardMeta" data-i18n="demo.hint">Нажмите кнопку или потяните карточку</span>
+            </div>
+          </div>
+
+          <button type="button" class="swipe-hint swipe-hint--down" id="demoSkipBtn">
+            <span aria-hidden="true">↓</span>
+            <span data-i18n="demo.skip">ПРОПУСК (-1)</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works / Features Bento Grid -->
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="section__head">
+        <span class="section__kicker" data-i18n="features.kicker">Возможности</span>
+        <h2 id="features-title" class="section__title" data-i18n="features.title">
+          Создана для быстрых вечеринок и уютных семейных вечеров
+        </h2>
+        <p class="section__lead" data-i18n="features.lead">
+          Откройте приложение и начните раунд за пару касаний — с умным ИИ-генератором или встроенным словарём без интернета.
+        </p>
+      </div>
+
+      <div class="bento-grid">
+        <article class="m3-card m3-card--highlight">
+          <div class="m3-card__badge">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2L12 3z"></path>
+            </svg>
+          </div>
+          <h3 class="m3-card__title" data-i18n="features.aiTitle">Две нейросети: Gemini и GigaChat</h3>
+          <p class="m3-card__text" data-i18n="features.aiText">
+            Выбирайте Google Gemini (Flash, Flash Lite, Pro) или Сбер GigaChat (Базовая, Plus, Pro, Max). Задайте любую тематику — «Кино и сериалы», «IT», «Гарри Поттер» или свою идею — и получайте свежие уникальные карточки без повторов.
+          </p>
+          <div class="chip-row">
+            <span class="m3-chip">Gemini API</span>
+            <span class="m3-chip">GigaChat OAuth2</span>
+            <span class="m3-chip" data-i18n="features.aiChip">Строгий JSON</span>
+          </div>
+        </article>
+
+        <article class="m3-card">
+          <div class="m3-card__badge">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+              <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+              <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+              <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+              <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+              <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+          </div>
+          <h3 class="m3-card__title" data-i18n="features.offlineTitle">10 000+ слов офлайн</h3>
+          <p class="m3-card__text" data-i18n="features.offlineText">
+            Включите «Играть офлайн» прямо на главном экране — интернет и API-ключи не нужны. Встроено более 5 000 русских слов + 882 фразы и 5 300+ английских карточек.
+          </p>
+        </article>
+
+        <article class="m3-card">
+          <div class="m3-card__badge">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 20V10"></path>
+              <path d="M18 20V4"></path>
+              <path d="M6 20v-4"></path>
+            </svg>
+          </div>
+          <h3 class="m3-card__title" data-i18n="features.diffTitle">5 уровней сложности</h3>
+          <p class="m3-card__text" data-i18n="features.diffText">
+            «Семья» для игры с детьми, «Лёгкая», «Средняя» и «Сложная» строго по одному слову, а также режим «Словосочетания» с идиомами и крылатыми выражениями.
+          </p>
+        </article>
+
+        <article class="m3-card">
+          <div class="m3-card__badge">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </div>
+          <h3 class="m3-card__title" data-i18n="features.langTitle">Два языка: RU и EN</h3>
+          <p class="m3-card__text" data-i18n="features.langText">
+            Русский и английский адаптируют весь интерфейс, системные промпты нейросети, встроенные словари и названия команд («Снежные Барсы», «Острые Умы»).
+          </p>
+        </article>
+
+        <article class="m3-card m3-card--wide">
+          <div class="m3-card__badge">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+              <path d="M12 18h.01"></path>
+            </svg>
+          </div>
+          <h3 class="m3-card__title" data-i18n="features.m3Title">Material 3 Expressive и живая физика</h3>
+          <p class="m3-card__text" data-i18n="features.m3Text">
+            Свайпы вверх (+1) и вниз (-N) с пружинной физикой и виброоткликом, морфинг органических форм при загрузке, диалог «Последнее слово!», просмотр истории сыгранных карточек и поддержка динамической палитры Material You на Android 12+.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section class="section" id="screenshots" aria-labelledby="screenshots-title">
+      <div class="section__head">
+        <span class="section__kicker" data-i18n="shots.kicker">Скриншоты</span>
+        <h2 id="screenshots-title" class="section__title" data-i18n="shots.title">
+          Интерфейс в деталях
+        </h2>
+        <p class="section__lead" data-i18n="shots.lead">
+          Нажмите на любой экран, чтобы открыть его в полном размере. Приложение поддерживает как фирменную фиолетовую тему, так и динамические цвета Material You от обоев системы.
+        </p>
+      </div>
+
+      <div class="screenshots-grid">
+        <figure class="shot-card">
+          <button type="button" class="shot-card__trigger" data-shot-index="0" aria-label="Увеличить скриншот выбора языка">
+            <div class="device-frame">
+              <img src="assets/screenshots/screen-onboarding.png" alt="Стартовый экран выбора языка Alias You с органическими волнистыми формами Material 3 Expressive" width="460" height="1024" loading="lazy">
+            </div>
+          </button>
+          <figcaption class="shot-card__caption">
+            <strong data-i18n="shots.s0Title">Выбор языка при старте</strong>
+            <span data-i18n="shots.s0Desc">Стартовый экран в духе Google Pixel с вращающимися органическими формами MD3.</span>
+          </figcaption>
+        </figure>
+
+        <figure class="shot-card">
+          <button type="button" class="shot-card__trigger" data-shot-index="1" aria-label="Увеличить скриншот настройки игры">
+            <div class="device-frame">
+              <img src="assets/screenshots/screen-setup.jpg" alt="Главный экран настройки Alias You с выбором Gemini и GigaChat, офлайн-переключателем и уровнями сложности" width="460" height="1024" loading="lazy">
+            </div>
+          </button>
+          <figcaption class="shot-card__caption">
+            <strong data-i18n="shots.s1Title">ИИ, офлайн и сложность</strong>
+            <span data-i18n="shots.s1Desc">Выбор Gemini / GigaChat, переключатель офлайн-режима, тематики и 5 уровней сложности.</span>
+          </figcaption>
+        </figure>
+
+        <figure class="shot-card">
+          <button type="button" class="shot-card__trigger" data-shot-index="2" aria-label="Увеличить скриншот игрового процесса">
+            <div class="device-frame">
+              <img src="assets/screenshots/screen-game.png" alt="Экран игрового раунда Alias You со словом на карточке и подсказками свайпов вверх и вниз" width="460" height="1024" loading="lazy">
+            </div>
+          </button>
+          <figcaption class="shot-card__caption">
+            <strong data-i18n="shots.s2Title">Свайпы и таймер</strong>
+            <span data-i18n="shots.s2Desc">Карточка со словом, свайп вверх — отгадано (+1), свайп вниз — пропуск (-1) и живой таймер раунда.</span>
+          </figcaption>
+        </figure>
+
+        <figure class="shot-card">
+          <button type="button" class="shot-card__trigger" data-shot-index="3" aria-label="Увеличить скриншот итогов игры">
+            <div class="device-frame">
+              <img src="assets/screenshots/screen-gameover.png" alt="Экран завершения игры Alias You с победителем и итоговой таблицей команд" width="460" height="1024" loading="lazy">
+            </div>
+          </button>
+          <figcaption class="shot-card__caption">
+            <strong data-i18n="shots.s3Title">Победитель и итоги</strong>
+            <span data-i18n="shots.s3Desc">Итоговая таблица с MD3 Expressive формами призовых мест и суммой очков каждой команды.</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Download Section -->
+    <section class="section" id="download" aria-labelledby="download-title">
+      <div class="download-banner">
+        <div class="download-banner__info">
+          <span class="section__kicker section__kicker--on-container" data-i18n="dl.kicker">Скачать на Android</span>
+          <h2 id="download-title" class="download-banner__title" data-i18n="dl.title">
+            Готовы начать раунд?
+          </h2>
+          <p class="download-banner__text" data-i18n="dl.text">
+            Скачайте актуальный установочный файл напрямую из последнего релиза на GitHub. Офлайн-режим работает сразу после установки, а API-ключ Gemini или GigaChat можно добавить позже в настройках.
+          </p>
+
+          <div class="download-banner__meta">
+            <span class="meta-pill" data-i18n="dl.metaVer">Версия: 2.1</span>
+            <span class="meta-pill">Android 7.0+ (API 24)</span>
+            <span class="meta-pill">Kotlin · Jetpack Compose</span>
+          </div>
+
+          <div class="download-banner__actions">
+            <a class="md-btn md-btn--filled md-btn--xl" href="https://github.com/semyqofu/AliasYou/releases/latest/download/app-release.apk" download="app-release.apk">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span data-i18n="dl.cta">Скачать app-release.apk</span>
+            </a>
+
+            <a class="md-btn md-btn--outlined" href="https://github.com/semyqofu/AliasYou/releases/latest" target="_blank" rel="noopener noreferrer">
+              <span data-i18n="dl.releasePage">Страница релиза</span>
+            </a>
+          </div>
+        </div>
+
+        <ol class="install-steps" aria-label="Как установить APK">
+          <li>
+            <span class="step-num">1</span>
+            <div>
+              <strong data-i18n="dl.step1Title">Скачайте APK</strong>
+              <p data-i18n="dl.step1Text">Файл загрузится из раздела GitHub Releases (releases/latest).</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <div>
+              <strong data-i18n="dl.step2Title">Установите приложение</strong>
+              <p data-i18n="dl.step2Text">Откройте <code>app-release.apk</code> и при необходимости разрешите установку из браузера.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <div>
+              <strong data-i18n="dl.step3Title">Соберите друзей</strong>
+              <p data-i18n="dl.step3Text">Играйте сразу с офлайн-словарём или подключите свой ключ Gemini / GigaChat.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <img src="assets/favicon.svg" alt="" width="24" height="24">
+        <span>Alias You · Material 3 Expressive</span>
+      </div>
+      <div class="site-footer__links">
+        <a href="https://github.com/semyqofu/AliasYou" target="_blank" rel="noopener noreferrer" data-i18n="footer.repo">Репозиторий</a>
+        <a href="https://github.com/semyqofu/AliasYou/releases/latest" target="_blank" rel="noopener noreferrer" data-i18n="footer.releases">Релизы</a>
+        <a href="https://github.com/semyqofu/AliasYou/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" data-i18n="footer.license">Лицензия</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Native HTML Dialog Lightbox for Screenshots -->
+  <dialog class="lightbox" id="lightbox" aria-labelledby="lightboxTitle">
+    <div class="lightbox__surface">
+      <div class="lightbox__header">
+        <div>
+          <h3 id="lightboxTitle" class="lightbox__title"></h3>
+          <p id="lightboxDesc" class="lightbox__desc"></p>
+        </div>
+        <button type="button" class="md-icon-btn" id="lightboxClose" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="lightbox__media">
+        <button type="button" class="md-icon-btn lightbox__nav" id="lightboxPrev" aria-label="Предыдущий скриншот">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <img id="lightboxImg" src="" alt="" width="460" height="1024">
+        <button type="button" class="md-icon-btn lightbox__nav" id="lightboxNext" aria-label="Следующий скриншот">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
