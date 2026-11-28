@@ -20,7 +20,7 @@ import kotlin.random.Random
 
 class GigaChatService(
     private val authKey: String,
-    val modelName: String = "GigaChat",
+    val modelName: String = "GigaChat-2",
     private val scope: String = "GIGACHAT_API_PERS"
 ) : AiService {
 
@@ -90,7 +90,7 @@ class GigaChatService(
         userPrompt: String,
         temperature: Double
     ): String {
-        val chatUrl = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+        val chatUrl = "https://api.giga.chat/v1/chat/completions"
 
         val messagesArray = JSONArray().apply {
             put(JSONObject().apply {
@@ -104,7 +104,7 @@ class GigaChatService(
         }
 
         val requestJson = JSONObject().apply {
-            put("model", if (modelName.isBlank()) "GigaChat" else modelName)
+            put("model", if (modelName.isBlank()) "GigaChat-2" else modelName)
             put("messages", messagesArray)
             put("temperature", temperature)
             put("stream", false)

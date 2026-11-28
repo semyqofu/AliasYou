@@ -73,6 +73,7 @@ class MainActivity : ComponentActivity() {
                 CompositionLocalProvider(LocalAppStrings provides appStrings) {
                     val startDestination = when {
                         intent.getStringExtra("screen") == "game_over" -> "game_over_preview"
+                        intent.getStringExtra("screen") == "onboarding" -> "onboarding"
                         !hasCompletedOnboarding -> "onboarding"
                         else -> "settings"
                     }
@@ -119,17 +120,37 @@ class MainActivity : ComponentActivity() {
                             }
                         ) {
                         composable("onboarding") {
+                            val savedGeminiKey = remember {
+                                prefs.getString("gemini_api_key", prefs.getString("api_key", "") ?: "") ?: ""
+                            }
+                            val savedGigaChatKey = remember {
+                                prefs.getString("gigachat_auth_key", "") ?: ""
+                            }
                             LanguageOnboardingScreen(
                                 initialLanguage = appLanguage,
+                                initialGeminiKey = savedGeminiKey,
+                                initialGigaChatKey = savedGigaChatKey,
                                 onLanguageSelected = { lang ->
                                     appLanguage = lang
                                 },
-                                onContinue = { lang ->
+                                onContinue = { lang, geminiKey, gigachatKey ->
                                     appLanguage = lang
-                                    prefs.edit()
+                                    val editor = prefs.edit()
                                         .putString("app_language", lang)
                                         .putBoolean("onboarding_completed", true)
-                                        .apply()
+                                    if (geminiKey.isNotBlank()) {
+                                        editor.putString("api_key", geminiKey)
+                                        editor.putString("gemini_api_key", geminiKey)
+                                    }
+                                    if (gigachatKey.isNotBlank()) {
+                                        editor.putString("gigachat_auth_key", gigachatKey)
+                                    }
+                                    if (geminiKey.isBlank() && gigachatKey.isNotBlank()) {
+                                        editor.putString("ai_provider", "gigachat")
+                                    } else if (geminiKey.isNotBlank()) {
+                                        editor.putString("ai_provider", "gemini")
+                                    }
+                                    editor.apply()
                                     navController.navigate("settings") {
                                         popUpTo("onboarding") { inclusive = true }
                                     }

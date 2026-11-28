@@ -5,40 +5,60 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Casino
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.SmartToy
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.semyqofu.aliasyou.ui.AppStrings
@@ -49,15 +69,54 @@ import com.semyqofu.aliasyou.ui.components.isWideLandscape
 import kotlin.math.cos
 import kotlin.math.sin
 
+private data class BlobTarget(
+    val topCx: Float,
+    val topCy: Float,
+    val topRadius: Float,
+    val topPhaseDeg: Float,
+    val bottomCx: Float,
+    val bottomCy: Float,
+    val bottomRadius: Float,
+    val bottomPhaseDeg: Float
+)
+
+private data class ApiKeyStepSpec(
+    val keyLabel: String,
+    val placeholder: String,
+    val value: String,
+    val onValueChange: (String) -> Unit,
+    val guideTitle: String,
+    val guideSteps: List<String>,
+    val linkLabel: String,
+    val linkUrl: String,
+    val expanded: Boolean,
+    val onToggleExpanded: () -> Unit,
+    val confirmLabel: String,
+    val onSkip: () -> Unit,
+    val onConfirm: () -> Unit
+)
+
 @Composable
 fun LanguageOnboardingScreen(
     initialLanguage: String = "ru",
+    initialGeminiKey: String = "",
+    initialGigaChatKey: String = "",
     onLanguageSelected: (String) -> Unit,
-    onContinue: (String) -> Unit
+    onContinue: (language: String, geminiKey: String, gigachatKey: String) -> Unit
 ) {
     val context = LocalContext.current
-    var selectedLanguage by remember { mutableStateOf(initialLanguage) }
+    var currentStep by rememberSaveable { mutableIntStateOf(0) } // 0: Language, 1: Gemini, 2: GigaChat
+    var selectedLanguage by rememberSaveable { mutableStateOf(initialLanguage) }
+    var geminiKey by rememberSaveable { mutableStateOf(initialGeminiKey) }
+    var gigachatKey by rememberSaveable { mutableStateOf(initialGigaChatKey) }
+    var geminiGuideExpanded by rememberSaveable { mutableStateOf(false) }
+    var gigachatGuideExpanded by rememberSaveable { mutableStateOf(false) }
+
     val strings = remember(selectedLanguage) { AppStrings.forLanguage(selectedLanguage) }
+
+    BackHandler(enabled = currentStep > 0) {
+        currentStep = (currentStep - 1).coerceAtLeast(0)
+    }
 
     val vibrator = remember(context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -102,6 +161,36 @@ fun LanguageOnboardingScreen(
         label = "bottomBlobRotation"
     )
 
+    // Smoothly glide background organic blobs across onboarding steps for Pixel-like parallax depth
+    val targetBlob = when (currentStep) {
+        0 -> BlobTarget(
+            topCx = 0.88f, topCy = 0.06f, topRadius = 0.44f, topPhaseDeg = 0f,
+            bottomCx = 0.42f, bottomCy = 0.90f, bottomRadius = 0.78f, bottomPhaseDeg = 0f
+        )
+        1 -> BlobTarget(
+            topCx = 0.14f, topCy = 0.10f, topRadius = 0.48f, topPhaseDeg = 42f,
+            bottomCx = 0.84f, bottomCy = 0.84f, bottomRadius = 0.70f, bottomPhaseDeg = -36f
+        )
+        else -> BlobTarget(
+            topCx = 0.82f, topCy = 0.14f, topRadius = 0.50f, topPhaseDeg = 84f,
+            bottomCx = 0.18f, bottomCy = 0.86f, bottomRadius = 0.74f, bottomPhaseDeg = -72f
+        )
+    }
+
+    val blobSpring = spring<Float>(
+        dampingRatio = Spring.DampingRatioLowBouncy,
+        stiffness = Spring.StiffnessLow
+    )
+    val topCxFactor by animateFloatAsState(targetBlob.topCx, animationSpec = blobSpring, label = "topCx")
+    val topCyFactor by animateFloatAsState(targetBlob.topCy, animationSpec = blobSpring, label = "topCy")
+    val topRadiusFactor by animateFloatAsState(targetBlob.topRadius, animationSpec = blobSpring, label = "topR")
+    val topPhaseDeg by animateFloatAsState(targetBlob.topPhaseDeg, animationSpec = blobSpring, label = "topPhase")
+
+    val bottomCxFactor by animateFloatAsState(targetBlob.bottomCx, animationSpec = blobSpring, label = "botCx")
+    val bottomCyFactor by animateFloatAsState(targetBlob.bottomCy, animationSpec = blobSpring, label = "botCy")
+    val bottomRadiusFactor by animateFloatAsState(targetBlob.bottomRadius, animationSpec = blobSpring, label = "botR")
+    val bottomPhaseDeg by animateFloatAsState(targetBlob.bottomPhaseDeg, animationSpec = blobSpring, label = "botPhase")
+
     val topBlobColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
     val bottomBlobColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f)
 
@@ -110,73 +199,124 @@ fun LanguageOnboardingScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Pixel-style slowly rotating scalloped organic background shapes
+            // Pixel-style slowly rotating & parallax-shifting scalloped organic background shapes
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val topRadius = size.minDimension * 0.44f
-                val topCx = size.width * 0.88f
-                val topCy = size.height * 0.06f
                 drawScallopedBlob(
-                    cx = topCx,
-                    cy = topCy,
-                    baseRadius = topRadius,
-                    rotationDegrees = topBlobRotation,
+                    cx = size.width * topCxFactor,
+                    cy = size.height * topCyFactor,
+                    baseRadius = size.minDimension * topRadiusFactor,
+                    rotationDegrees = topBlobRotation + topPhaseDeg,
                     shape = Md3ExpressiveShape.COOKIE_7,
                     color = topBlobColor
                 )
 
-                val bottomRadius = size.minDimension * 0.78f
-                val bottomCx = size.width * 0.42f
-                val bottomCy = size.height * 0.90f
                 drawScallopedBlob(
-                    cx = bottomCx,
-                    cy = bottomCy,
-                    baseRadius = bottomRadius,
-                    rotationDegrees = bottomBlobRotation,
+                    cx = size.width * bottomCxFactor,
+                    cy = size.height * bottomCyFactor,
+                    baseRadius = size.minDimension * bottomRadiusFactor,
+                    rotationDegrees = bottomBlobRotation + bottomPhaseDeg,
                     shape = Md3ExpressiveShape.COOKIE_7,
                     color = bottomBlobColor
                 )
             }
 
-            val topBadge: @Composable () -> Unit = {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    tonalElevation = 2.dp,
-                    modifier = Modifier.size(52.dp)
+            val topHeaderBar: @Composable () -> Unit = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.Casino,
-                            contentDescription = "Alias You",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(26.dp)
-                        )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        AnimatedVisibility(visible = currentStep > 0) {
+                            Surface(
+                                onClick = {
+                                    triggerVibration(15)
+                                    currentStep = (currentStep - 1).coerceAtLeast(0)
+                                },
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                tonalElevation = 2.dp,
+                                modifier = Modifier.size(52.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                        contentDescription = strings.onboardingBackCd,
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        val badgeIcon: ImageVector = when (currentStep) {
+                            0 -> Icons.Rounded.Casino
+                            1 -> Icons.Rounded.AutoAwesome
+                            else -> Icons.Rounded.SmartToy
+                        }
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            tonalElevation = 2.dp,
+                            modifier = Modifier.size(52.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                AnimatedContent(
+                                    targetState = badgeIcon,
+                                    transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(150)) },
+                                    label = "badgeIcon"
+                                ) { icon ->
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = "Alias You",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
+
+                    OnboardingStepDots(
+                        totalSteps = 3,
+                        currentStep = currentStep
+                    )
                 }
             }
 
-            val greetingSection: @Composable (TextAlign) -> Unit = { alignment ->
+            val stepTitle: @Composable (TextAlign) -> Unit = { alignment ->
                 AnimatedContent(
-                    targetState = strings,
+                    targetState = Triple(currentStep, selectedLanguage, strings),
                     transitionSpec = {
-                        (fadeIn(tween(300)) + slideInVertically(spring(dampingRatio = Spring.DampingRatioMediumBouncy)) { 24 } + scaleIn(initialScale = 0.94f))
-                            .togetherWith(fadeOut(tween(200)) + slideOutVertically { -20 } + scaleOut(targetScale = 0.96f))
+                        val forward = targetState.first >= initialState.first
+                        val slideInOffset = { fullWidth: Int -> if (forward) fullWidth / 4 else -fullWidth / 4 }
+                        val slideOutOffset = { fullWidth: Int -> if (forward) -fullWidth / 4 else fullWidth / 4 }
+                        (fadeIn(tween(280)) + slideInHorizontally(spring(dampingRatio = Spring.DampingRatioNoBouncy), initialOffsetX = slideInOffset))
+                            .togetherWith(fadeOut(tween(180)) + slideOutHorizontally(tween(200), targetOffsetX = slideOutOffset))
                     },
-                    label = "greetingTransition"
-                ) { s ->
+                    label = "stepTitleTransition"
+                ) { (step, _, s) ->
+                    val (headline, subtitle) = when (step) {
+                        0 -> s.onboardingGreeting to s.onboardingSubtitle
+                        1 -> s.onboardingGeminiTitle to s.onboardingGeminiSubtitle
+                        else -> s.onboardingGigaChatTitle to s.onboardingGigaChatSubtitle
+                    }
                     Column(
                         horizontalAlignment = if (alignment == TextAlign.Start) Alignment.Start else Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = s.onboardingGreeting,
-                            style = MaterialTheme.typography.displayMedium,
+                            text = headline,
+                            style = if (step == 0) MaterialTheme.typography.displayMedium else MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = alignment
                         )
                         Text(
-                            text = s.onboardingSubtitle,
+                            text = subtitle,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = alignment
@@ -185,109 +325,95 @@ fun LanguageOnboardingScreen(
                 }
             }
 
-            val pickerAndActions: @Composable () -> Unit = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    // Language Choice Pills (Russian / English)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        LanguageChoicePill(
-                            label = "Русский",
-                            subLabel = "5 000+ слов",
-                            selected = selectedLanguage == "ru",
-                            onClick = {
+            val stepContentAndActions: @Composable () -> Unit = {
+                AnimatedContent(
+                    targetState = currentStep,
+                    transitionSpec = {
+                        val forward = targetState >= initialState
+                        val slideInOffset = { fullWidth: Int -> if (forward) fullWidth / 3 else -fullWidth / 3 }
+                        val slideOutOffset = { fullWidth: Int -> if (forward) -fullWidth / 3 else fullWidth / 3 }
+                        (fadeIn(tween(300)) + slideInHorizontally(spring(dampingRatio = Spring.DampingRatioNoBouncy), initialOffsetX = slideInOffset))
+                            .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(220), targetOffsetX = slideOutOffset))
+                    },
+                    label = "stepBodyTransition"
+                ) { step ->
+                    when (step) {
+                        0 -> LanguageStepBody(
+                            selectedLanguage = selectedLanguage,
+                            strings = strings,
+                            onSelectLanguage = { lang ->
                                 triggerVibration(20)
-                                selectedLanguage = "ru"
-                                onLanguageSelected("ru")
+                                selectedLanguage = lang
+                                onLanguageSelected(lang)
                             },
-                            modifier = Modifier.weight(1f)
-                        )
-                        LanguageChoicePill(
-                            label = "English",
-                            subLabel = "5,300+ words",
-                            selected = selectedLanguage == "en",
-                            onClick = {
-                                triggerVibration(20)
-                                selectedLanguage = "en"
-                                onLanguageSelected("en")
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    // Pixel-style Bottom Action Row (Language toggle pill + Primary Arrow pill)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            onClick = {
+                            onToggleLanguage = {
                                 triggerVibration(15)
                                 val next = if (selectedLanguage == "ru") "en" else "ru"
                                 selectedLanguage = next
                                 onLanguageSelected(next)
                             },
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            tonalElevation = 2.dp,
-                            modifier = Modifier
-                                .width(84.dp)
-                                .height(58.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Translate,
-                                    contentDescription = strings.onboardingSwitchLanguageCd,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-
-                        Button(
-                            onClick = {
+                            onContinue = {
                                 triggerVibration(45)
-                                onContinue(selectedLanguage)
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(58.dp)
-                                .bouncyClickable {
-                                    triggerVibration(45)
-                                    onContinue(selectedLanguage)
-                                },
-                            shape = CircleShape,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = strings.onboardingContinue,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(22.dp)
-                                )
+                                currentStep = 1
                             }
-                        }
+                        )
+
+                        1 -> ApiKeyStepBody(
+                            spec = ApiKeyStepSpec(
+                                keyLabel = strings.geminiKeyLabel,
+                                placeholder = "AIzaSy...",
+                                value = geminiKey,
+                                onValueChange = { geminiKey = it },
+                                guideTitle = strings.onboardingGeminiGuideTitle,
+                                guideSteps = strings.onboardingGeminiGuideSteps,
+                                linkLabel = strings.onboardingGeminiLinkLabel,
+                                linkUrl = "https://aistudio.google.com/api-keys",
+                                expanded = geminiGuideExpanded,
+                                onToggleExpanded = {
+                                    triggerVibration(10)
+                                    geminiGuideExpanded = !geminiGuideExpanded
+                                },
+                                confirmLabel = strings.onboardingContinue,
+                                onSkip = {
+                                    triggerVibration(25)
+                                    geminiKey = ""
+                                    currentStep = 2
+                                },
+                                onConfirm = {
+                                    triggerVibration(45)
+                                    currentStep = 2
+                                }
+                            ),
+                            skipLabel = strings.onboardingSkip
+                        )
+
+                        else -> ApiKeyStepBody(
+                            spec = ApiKeyStepSpec(
+                                keyLabel = strings.gigachatKeyLabel,
+                                placeholder = "ODQ2...",
+                                value = gigachatKey,
+                                onValueChange = { gigachatKey = it },
+                                guideTitle = strings.onboardingGigaChatGuideTitle,
+                                guideSteps = strings.onboardingGigaChatGuideSteps,
+                                linkLabel = strings.onboardingGigaChatLinkLabel,
+                                linkUrl = "https://developers.sber.ru/studio/login",
+                                expanded = gigachatGuideExpanded,
+                                onToggleExpanded = {
+                                    triggerVibration(10)
+                                    gigachatGuideExpanded = !gigachatGuideExpanded
+                                },
+                                confirmLabel = strings.onboardingDone,
+                                onSkip = {
+                                    triggerVibration(25)
+                                    onContinue(selectedLanguage, geminiKey.trim(), "")
+                                },
+                                onConfirm = {
+                                    triggerVibration(45)
+                                    onContinue(selectedLanguage, geminiKey.trim(), gigachatKey.trim())
+                                }
+                            ),
+                            skipLabel = strings.onboardingSkip
+                        )
                     }
                 }
             }
@@ -296,6 +422,7 @@ fun LanguageOnboardingScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .systemBarsPadding()
+                    .imePadding()
                     .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
                 if (isWideLandscape(maxWidth, maxHeight)) {
@@ -314,51 +441,391 @@ fun LanguageOnboardingScreen(
                             verticalArrangement = Arrangement.SpaceBetween,
                             horizontalAlignment = Alignment.Start
                         ) {
-                            topBadge()
-                            greetingSection(TextAlign.Start)
+                            topHeaderBar()
+                            stepTitle(TextAlign.Start)
                             Spacer(modifier = Modifier.height(12.dp))
                         }
 
                         Box(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .verticalScroll(rememberScrollState()),
                             contentAlignment = Alignment.Center
                         ) {
-                            Box(modifier = Modifier.widthIn(max = 460.dp)) {
-                                pickerAndActions()
+                            Box(
+                                modifier = Modifier
+                                    .widthIn(max = 460.dp)
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                stepContentAndActions()
                             }
                         }
                     }
                 } else {
+                    val viewportHeight = maxHeight
                     Box(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.TopCenter
                     ) {
-                        Column(
+                        Box(
                             modifier = Modifier
                                 .widthIn(max = 520.dp)
-                                .fillMaxSize(),
-                            verticalArrangement = Arrangement.SpaceBetween
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Start,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                topBadge()
-                            }
-
                             Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(24.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = viewportHeight),
+                                verticalArrangement = Arrangement.SpaceBetween
                             ) {
-                                greetingSection(TextAlign.Center)
-                                pickerAndActions()
+                                topHeaderBar()
+
+                                Spacer(modifier = Modifier.height(20.dp))
+
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(22.dp)
+                                ) {
+                                    stepTitle(TextAlign.Center)
+                                    stepContentAndActions()
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun OnboardingStepDots(
+    totalSteps: Int,
+    currentStep: Int
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(totalSteps) { index ->
+            val isActive = index == currentStep
+            val width by animateDpAsState(
+                targetValue = if (isActive) 22.dp else 8.dp,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                label = "stepDotWidth"
+            )
+            val color by animateColorAsState(
+                targetValue = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                label = "stepDotColor"
+            )
+            Surface(
+                shape = CircleShape,
+                color = color,
+                modifier = Modifier
+                    .width(width)
+                    .height(8.dp)
+            ) {}
+        }
+    }
+}
+
+@Composable
+private fun LanguageStepBody(
+    selectedLanguage: String,
+    strings: AppStrings,
+    onSelectLanguage: (String) -> Unit,
+    onToggleLanguage: () -> Unit,
+    onContinue: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            LanguageChoicePill(
+                label = "Русский",
+                subLabel = "5 000+ слов",
+                selected = selectedLanguage == "ru",
+                onClick = { onSelectLanguage("ru") },
+                modifier = Modifier.weight(1f)
+            )
+            LanguageChoicePill(
+                label = "English",
+                subLabel = "5,300+ words",
+                selected = selectedLanguage == "en",
+                onClick = { onSelectLanguage("en") },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                onClick = onToggleLanguage,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = 2.dp,
+                modifier = Modifier
+                    .width(84.dp)
+                    .height(58.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Rounded.Translate,
+                        contentDescription = strings.onboardingSwitchLanguageCd,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            PrimaryPillButton(
+                text = strings.onboardingContinue,
+                enabled = true,
+                onClick = onContinue,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ApiKeyStepBody(
+    spec: ApiKeyStepSpec,
+    skipLabel: String
+) {
+    val uriHandler = LocalUriHandler.current
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (spec.expanded) 180f else 0f,
+        animationSpec = tween(250),
+        label = "guideChevron"
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        OutlinedTextField(
+            value = spec.value,
+            onValueChange = spec.onValueChange,
+            label = { Text(spec.keyLabel) },
+            placeholder = { Text(spec.placeholder) },
+            singleLine = true,
+            trailingIcon = {
+                if (spec.value.isNotEmpty()) {
+                    IconButton(onClick = { spec.onValueChange("") }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            },
+            shape = MaterialTheme.shapes.large,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.96f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.92f)
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Expandable Setup Guide Card
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.large)
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { spec.onToggleExpanded() }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = spec.guideTitle,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Rounded.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .graphicsLayer { rotationZ = chevronRotation }
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = spec.expanded,
+                    enter = expandVertically(tween(240)) + fadeIn(tween(200)),
+                    exit = shrinkVertically(tween(200)) + fadeOut(tween(150))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                        spec.guideSteps.forEach { stepText ->
+                            Text(
+                                text = stepText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 18.sp
+                            )
+                        }
+                        FilledTonalButton(
+                            onClick = {
+                                try {
+                                    uriHandler.openUri(spec.linkUrl)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            },
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 2.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = spec.linkLabel,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Bottom Action Row: Skip pill + Primary Continue/Done pill
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                onClick = spec.onSkip,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = 2.dp,
+                modifier = Modifier
+                    .height(58.dp)
+                    .widthIn(min = 120.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                ) {
+                    Text(
+                        text = skipLabel,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            PrimaryPillButton(
+                text = spec.confirmLabel,
+                enabled = spec.value.isNotBlank(),
+                onClick = spec.onConfirm,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun PrimaryPillButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .height(58.dp)
+            .then(
+                if (enabled) {
+                    Modifier.bouncyClickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            ),
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                softWrap = false
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                contentDescription = null,
+                modifier = Modifier.size(22.dp)
+            )
         }
     }
 }

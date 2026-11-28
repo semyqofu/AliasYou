@@ -115,7 +115,14 @@ fun SettingsScreen(
         mutableStateOf(prefs.getString("gigachat_auth_key", "") ?: "")
     }
     var gigachatModel by remember {
-        mutableStateOf(prefs.getString("gigachat_model", "GigaChat") ?: "GigaChat")
+        val saved = prefs.getString("gigachat_model", "GigaChat-2") ?: "GigaChat-2"
+        val normalized = when (saved) {
+            "GigaChat", "GigaChat-Plus" -> "GigaChat-2"
+            "GigaChat-Pro" -> "GigaChat-2-Pro"
+            "GigaChat-Max" -> "GigaChat-2-Max"
+            else -> saved
+        }
+        mutableStateOf(normalized)
     }
     var gigachatScope by remember {
         mutableStateOf(prefs.getString("gigachat_scope", "GIGACHAT_API_PERS") ?: "GIGACHAT_API_PERS")
@@ -183,10 +190,10 @@ fun SettingsScreen(
     )
 
     val gigachatModels = listOf(
-        ModelOption("GigaChat", strings.gigachatBaseModelLabel, Icons.Rounded.SmartToy, SuccessGreen),
-        ModelOption("GigaChat-Plus", "GigaChat-Plus", Icons.Rounded.Star, MaterialTheme.colorScheme.primary),
-        ModelOption("GigaChat-Pro", "GigaChat-Pro", Icons.Rounded.Psychology, MaterialTheme.colorScheme.secondary),
-        ModelOption("GigaChat-Max", "GigaChat-Max", Icons.Rounded.WorkspacePremium, MaterialTheme.colorScheme.tertiary)
+        ModelOption("GigaChat-2", "GigaChat 2 Lite", Icons.Rounded.SmartToy, SuccessGreen),
+        ModelOption("GigaChat-2-Pro", "GigaChat 2 Pro", Icons.Rounded.Psychology, MaterialTheme.colorScheme.secondary),
+        ModelOption("GigaChat-2-Max", "GigaChat 2 Max", Icons.Rounded.WorkspacePremium, MaterialTheme.colorScheme.tertiary),
+        ModelOption("GigaChat-3-Ultra", "GigaChat 3 Ultra", Icons.Rounded.AutoAwesome, MaterialTheme.colorScheme.primary)
     )
 
     // Current API Key status for the active provider
